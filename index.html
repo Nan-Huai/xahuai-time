@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>时间机器 · 小羊</title>
+<meta name="theme-color" content="#0b0b0d">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏳</text></svg>">
+<style>
+  :root{
+    --bg:#0a0a0c;
+    --card:rgba(255,255,255,.036);
+    --line:rgba(255,255,255,.08);
+    --line-2:rgba(255,255,255,.16);
+    --ink:#ecedf1;
+    --dim:rgba(236,237,241,.68);
+    --muted:#787884;
+    --me:#8fd3ff;       /* 我 —— 冷 */
+    --her:#ffb0c8;      /* 她 —— 暖 */
+    --accent:#c9b6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    min-height:100dvh;
+    background:
+      radial-gradient(120% 60% at 50% -10%, rgba(150,120,255,.10), transparent 62%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    line-height:1.72;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .wrap{width:100%;max-width:660px;margin:0 auto;padding:clamp(34px,8vh,72px) 18px 60px}
+
+  /* ---------- 头 ---------- */
+  .hero{text-align:center;margin-bottom:30px}
+  .hero .mark{
+    font-size:clamp(26px,7vw,36px);font-weight:600;letter-spacing:.14em;text-indent:.14em;
+    background:linear-gradient(180deg,#fff,#a9a3c8);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero .sub{margin-top:9px;font-size:12px;color:var(--muted);letter-spacing:.24em;text-indent:.24em}
+  .hero .range{
+    margin-top:16px;font-size:11.5px;color:rgba(120,120,132,.85);
+    font-variant-numeric:tabular-nums;letter-spacing:.08em;
+  }
+
+  /* ---------- 主轴 ---------- */
+  .dial{margin:26px 0 8px}
+  .dial .bar{
+    position:relative;height:44px;display:flex;align-items:center;
+    cursor:pointer;touch-action:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  }
+  .dial .track{
+    position:absolute;left:0;right:0;height:3px;border-radius:3px;
+    background:rgba(255,255,255,.09);overflow:hidden;
+  }
+  .dial .fill{
+    position:absolute;left:0;top:0;bottom:0;width:0;
+    background:linear-gradient(90deg,rgba(201,182,255,.15),rgba(201,182,255,.85));
+    border-radius:3px;
+  }
+  .dial .ticks{
+    position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+    height:13px;pointer-events:none;
+  }
+  .dial .ticks i{
+    position:absolute;bottom:0;width:1px;background:rgba(255,255,255,.22);
+    transform:translateX(-.5px);height:5px;
+  }
+  .dial .ticks i.big{height:11px;background:rgba(255,255,255,.42)}
+  .dial .knob{
+    position:absolute;top:50%;width:17px;height:17px;border-radius:50%;
+    background:#fff;box-shadow:0 0 0 5px rgba(201,182,255,.16),0 3px 12px rgba(0,0,0,.5);
+    transform:translate(-50%,-50%);pointer-events:none;
+    transition:box-shadow .2s;
+  }
+  .dial.drag .knob{box-shadow:0 0 0 9px rgba(201,182,255,.24),0 3px 16px rgba(0,0,0,.55)}
+  .dial .monthline{
+    position:relative;height:17px;margin-top:2px;
+    font-size:10px;color:rgba(120,120,132,.75);font-variant-numeric:tabular-nums;
+  }
+  .dial .monthline span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+
+  /* ---------- 当前日期 ---------- */
+  .now{
+    text-align:center;margin:18px 0 22px;
+  }
+  .now .date{
+    font-size:clamp(27px,8vw,40px);font-weight:600;letter-spacing:.02em;
+    font-variant-numeric:tabular-nums;
+  }
+  .now .wd{font-size:12px;color:var(--muted);letter-spacing:.2em;margin-top:4px}
+  .now .diff{font-size:11.5px;color:rgba(120,120,132,.8);margin-top:8px}
+
+  /* ---------- 计数 ---------- */
+  .nums{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;
+  }
+  .nums .k{
+    padding:12px 6px;border:1px solid var(--line);border-radius:13px;
+    background:var(--card);text-align:center;
+  }
+  .nums .k .v{font-size:19px;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+  .nums .k .l{font-size:10px;color:var(--muted);letter-spacing:.1em;margin-top:3px}
+  .nums .k.me .v{color:var(--me)}
+  .nums .k.her .v{color:var(--her)}
+
+  /* ---------- 时段条 ---------- */
+  .hours{
+    padding:14px 15px;border:1px solid var(--line);border-radius:13px;
+    background:var(--card);margin-bottom:12px;
+  }
+  .hours .t{font-size:11px;color:var(--muted);letter-spacing:.1em;margin-bottom:10px}
+  .hours .row{display:flex;gap:2px;height:30px;align-items:flex-end}
+  .hours .row i{
+    flex:1;border-radius:1.5px;background:rgba(255,255,255,.07);min-height:2.5px;
+  }
+  .hours .row i.hot{background:linear-gradient(180deg,rgba(201,182,255,.85),rgba(201,182,255,.35))}
+  .hours .axis{display:flex;justify-content:space-between;font-size:9.5px;color:rgba(120,120,132,.65);margin-top:5px;font-variant-numeric:tabular-nums}
+
+  /* ---------- 句子 ---------- */
+  .quotes{padding:4px 0}
+  .quotes .empty{
+    text-align:center;color:var(--muted);font-size:12.5px;padding:30px 0;letter-spacing:.08em;
+  }
+  .q{
+    position:relative;padding:12px 14px 12px 16px;margin-bottom:8px;
+    border-radius:13px;border:1px solid var(--line);background:var(--card);
+    transition:border-color .25s;
+  }
+  .q::before{
+    content:"";position:absolute;left:0;top:12px;bottom:12px;width:2px;border-radius:2px;
+    background:rgba(255,255,255,.13);
+  }
+  .q.her::before{background:var(--her);opacity:.65}
+  .q.me::before{background:var(--me);opacity:.5}
+  .q .m{
+    display:flex;align-items:baseline;gap:8px;margin-bottom:5px;
+    font-size:10.5px;letter-spacing:.08em;
+  }
+  .q .m .w{color:var(--muted)}
+  .q.her .m .w{color:var(--her);opacity:.85}
+  .q.me .m .w{color:var(--me);opacity:.75}
+  .q .m .t{color:rgba(120,120,132,.7);font-variant-numeric:tabular-nums}
+  .q .c{font-size:14px;color:var(--dim);word-break:break-word;white-space:pre-wrap}
+  .q.her .c{color:rgba(255,235,242,.9)}
+
+  /* ---------- 首尾 ---------- */
+  .edges{display:grid;gap:8px;margin-top:12px}
+  .edge{
+    padding:12px 14px;border:1px dashed rgba(255,255,255,.11);border-radius:12px;
+    font-size:12.5px;color:rgba(236,237,241,.55);
+  }
+  .edge .lb{font-size:10px;color:var(--muted);letter-spacing:.14em;margin-bottom:4px}
+
+  /* ---------- 底部导航 ---------- */
+  .nav{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin:22px 0 0;
+  }
+  .nav button{
+    flex:1;padding:11px;border-radius:12px;border:1px solid var(--line-2);
+    background:transparent;color:var(--dim);font-size:12.5px;letter-spacing:.06em;
+    cursor:pointer;font-family:inherit;transition:all .22s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .nav button:hover{border-color:rgba(201,182,255,.45);color:var(--ink)}
+  .nav button:disabled{opacity:.25;cursor:default;border-color:var(--line)}
+  .nav .jump{
+    flex:none;padding:11px 15px;font-variant-numeric:tabular-nums;
+  }
+
+  .foot{
+    margin-top:34px;text-align:center;font-size:11.5px;color:var(--muted);
+    letter-spacing:.1em;line-height:2.1;opacity:.78;
+  }
+  .foot a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.14)}
+  .foot a:hover{border-bottom-color:var(--accent)}
+
+  .fade{opacity:0;transform:translateY(9px);animation:in .6s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes in{to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.fade{opacity:1;transform:none;animation:none}}
+
+  .swap{animation:swap .34s ease-out}
+  @keyframes swap{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.swap{animation:none}}
+
+  @media (max-width:380px){
+    .nums{grid-template-columns:repeat(2,1fr)}
+    .dial .monthline{font-size:9px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero fade">
+    <div class="mark">时间机器</div>
+    <div class="sub">拖一下，回到某一天</div>
+    <div class="range" id="range"></div>
+  </header>
+
+  <div class="dial" id="dial">
+    <div class="bar" id="bar">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="ticks" id="ticks"></div>
+      <div class="knob" id="knob" style="left:0%"></div>
+    </div>
+    <div class="monthline" id="monthline"></div>
+  </div>
+
+  <div class="now">
+    <div class="date" id="date">—</div>
+    <div class="wd" id="wd"></div>
+    <div class="diff" id="diff"></div>
+  </div>
+
+  <div id="panel"></div>
+
+  <div class="nav">
+    <button id="prev">← 前一天</button>
+    <button class="jump" id="jump">随机一天</button>
+    <button id="next">后一天 →</button>
+  </div>
+
+  <div class="foot">
+    <span id="footstat"></span><br>
+    <a href="https://xahuai.icu">← 回主站</a> · <a href="https://voice.xahuai.icu">声音博物馆</a> · <a href="https://status.xahuai.icu">状态</a>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var DATA = null;
+  var idx = 0;
+  var WD = ['周日','周一','周二','周三','周四','周五','周六'];
+
+  var elBar = document.getElementById('bar');
+  var elFill = document.getElementById('fill');
+  var elKnob = document.getElementById('knob');
+  var elTicks = document.getElementById('ticks');
+  var elMonth = document.getElementById('monthline');
+  var elDial = document.getElementById('dial');
+
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+
+  function renderDial(){
+    var N = DATA.days.length;
+    // 每 7 天画一根刻度，月初加粗
+    var ticks = '', months = '';
+    var lastMonth = '';
+    DATA.days.forEach(function(d, i){
+      var p = N > 1 ? (i / (N - 1)) * 100 : 0;
+      var ym = d.d.slice(0, 7);
+      var isFirstOfMonth = (ym !== lastMonth);
+      if (i % 7 === 0 || isFirstOfMonth){
+        ticks += '<i class="' + (isFirstOfMonth ? 'big' : '') + '" style="left:' + p + '%"></i>';
+      }
+      if (isFirstOfMonth){
+        var m = parseInt(ym.slice(5, 7), 10);
+        months += '<span style="left:' + p + '%">' + m + '月</span>';
+        lastMonth = ym;
+      }
+    });
+    elTicks.innerHTML = ticks;
+    elMonth.innerHTML = months;
+  }
+
+  function go(i, animate){
+    var N = DATA.days.length;
+    idx = Math.max(0, Math.min(N - 1, i));
+    var d = DATA.days[idx];
+
+    var p = N > 1 ? (idx / (N - 1)) * 100 : 0;
+    elFill.style.width = p + '%';
+    elKnob.style.left = p + '%';
+
+    render(d, animate);
+    document.getElementById('prev').disabled = (idx === 0);
+    document.getElementById('next').disabled = (idx === N - 1);
+  }
+
+  function render(d, animate){
+    var dt = new Date(d.d + 'T00:00:00');
+    document.getElementById('date').textContent = d.d.replace(/-/g, ' . ');
+    document.getElementById('wd').textContent = WD[dt.getDay()];
+
+    // 距今天数
+    var today = new Date(); today.setHours(0,0,0,0);
+    var days = Math.round((today - dt) / 86400000);
+    document.getElementById('diff').textContent =
+      days === 0 ? '就是今天' : (days > 0 ? days + ' 天前' : Math.abs(days) + ' 天后');
+
+    var wrap = document.getElementById('panel');
+    var html = '';
+
+    // 四个数
+    html += '<div class="nums">'
+         +   '<div class="k"><div class="v">' + d.n + '</div><div class="l">总消息</div></div>'
+         +   '<div class="k her"><div class="v">' + d.her + '</div><div class="l">她发的</div></div>'
+         +   '<div class="k me"><div class="v">' + d.me + '</div><div class="l">我发的</div></div>'
+         +   '<div class="k"><div class="v">' + (d.s + d.v + d.i) + '</div><div class="l">表情语音图</div></div>'
+         + '</div>';
+
+    // 时段分布
+    var hs = d.h || [];
+    var maxN = 1;
+    // 用消息数近似：白天多，但没有逐小时计数，用 h 数组里有的小时平均分
+    var buckets = new Array(24).fill(0);
+    if (hs.length){
+      // 每个出现的小时按当天总消息平均摊
+      var per = d.n / hs.length;
+      hs.forEach(function(h){ buckets[parseInt(h, 10)] = per; });
+      maxN = Math.max.apply(null, buckets) || 1;
+    }
+    html += '<div class="hours">'
+         +   '<div class="t">活跃时段</div>'
+         +   '<div class="row">';
+    for (var h = 0; h < 24; h++){
+      var v = buckets[h];
+      var hh = v > 0 ? Math.max(10, (v / maxN) * 100) : 2.5;
+      html += '<i class="' + (v > 0 ? 'hot' : '') + '" style="height:' + hh + '%"></i>';
+    }
+    html +=   '</div>'
+         +   '<div class="axis"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>'
+         + '</div>';
+
+    // 句子
+    var qs = d.q || [];
+    if (qs.length){
+      html += '<div class="quotes">';
+      qs.forEach(function(q){
+        var cls = q.w === '我' ? 'me' : 'her';
+        var name = q.w === '我' ? '我' : '她';
+        html += '<div class="q ' + cls + '">'
+             +   '<div class="m"><span class="w">' + name + '</span><span class="t">' + q.t + '</span></div>'
+             +   '<div class="c">' + esc(q.c) + '</div>'
+             + '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="quotes"><div class="empty">这天没留下什么话</div></div>';
+    }
+
+    // 首尾
+    if (d.first && d.last){
+      html += '<div class="edges">'
+           +   '<div class="edge"><div class="lb">这天第一句</div>' + esc(d.first.c) + '</div>'
+           +   '<div class="edge"><div class="lb">这天最后一句</div>' + esc(d.last.c) + '</div>'
+           + '</div>';
+    }
+
+    wrap.innerHTML = html;
+    if (animate){
+      wrap.classList.remove('swap');
+      void wrap.offsetWidth;
+      wrap.classList.add('swap');
+    }
+
+    document.getElementById('footstat').textContent =
+      '第 ' + (idx + 1) + ' / ' + DATA.days.length + ' 天';
+  }
+
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ---------- 拖动 ----------
+  function posToIdx(clientX){
+    var r = elBar.getBoundingClientRect();
+    var t = (clientX - r.left) / r.width;
+    t = Math.max(0, Math.min(1, t));
+    return Math.round(t * (DATA.days.length - 1));
+  }
+
+  var dragging = false;
+  function down(e){
+    dragging = true;
+    elDial.classList.add('drag');
+    var x = e.touches ? e.touches[0].clientX : e.clientX;
+    go(posToIdx(x));
+  }
+  function move(e){
+    if (!dragging) return;
+    if (e.cancelable) e.preventDefault();
+    var x = e.touches ? e.touches[0].clientX : e.clientX;
+    go(posToIdx(x));
+  }
+  function up(){
+    dragging = false;
+    elDial.classList.remove('drag');
+  }
+
+  elBar.addEventListener('mousedown', down);
+  window.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', up);
+  elBar.addEventListener('touchstart', down, {passive:true});
+  window.addEventListener('touchmove', move, {passive:false});
+  window.addEventListener('touchend', up);
+
+  // 键盘
+  window.addEventListener('keydown', function(e){
+    var step = e.shiftKey ? 7 : 1;
+    if (e.key === 'ArrowLeft'){ go(idx - step, true); }
+    else if (e.key === 'ArrowRight'){ go(idx + step, true); }
+  });
+
+  document.getElementById('prev').addEventListener('click', function(){ go(idx - 1, true); });
+  document.getElementById('next').addEventListener('click', function(){ go(idx + 1, true); });
+  document.getElementById('jump').addEventListener('click', function(){
+    go(Math.floor(Math.random() * DATA.days.length), true);
+  });
+
+  // ---------- 加载 ----------
+  fetch('days.json?t=' + Date.now())
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(d){
+      DATA = d;
+      document.getElementById('range').textContent =
+        d.meta.range[0].replace(/-/g,'.') + ' — ' + d.meta.range[1].replace(/-/g,'.')
+        + '  ·  ' + d.meta.total + ' 条  ·  ' + d.meta.days + ' 天';
+      renderDial();
+      // 默认停在最热闹的一天
+      var best = 0, bestN = -1;
+      d.days.forEach(function(x, i){ if (x.n > bestN){ bestN = x.n; best = i; } });
+      go(best);
+    })
+    .catch(function(e){
+      document.getElementById('panel').innerHTML =
+        '<div class="quotes"><div class="empty">数据加载失败：' + e.message + '</div></div>';
+    });
+})();
+</script>
+</body>
+</html>
