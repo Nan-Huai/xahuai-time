@@ -423,6 +423,15 @@
         d.meta.range[0].replace(/-/g,'.') + ' — ' + d.meta.range[1].replace(/-/g,'.')
         + '  ·  ' + d.meta.total + ' 条  ·  ' + d.meta.days + ' 天';
       renderDial();
+
+      // ?d=2026-01-08 深链
+      var m = location.search.match(/[?&]d=(\d{4}-\d{2}-\d{2})/);
+      if (m){
+        var hit = -1;
+        d.days.forEach(function(x, i){ if (x.d === m[1]) hit = i; });
+        if (hit >= 0){ go(hit, true); return; }
+      }
+
       // 默认停在最热闹的一天
       var best = 0, bestN = -1;
       d.days.forEach(function(x, i){ if (x.n > bestN){ bestN = x.n; best = i; } });
