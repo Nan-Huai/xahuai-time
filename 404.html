@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>没有这一天 · 时间机器</title>
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏳</text></svg>">
+<style>
+  :root{
+    --bg:#0a0a0c;
+    --card:rgba(255,255,255,.034);
+    --line:rgba(255,255,255,.075);
+    --ink:#ecedf1;
+    --dim:rgba(236,237,241,.66);
+    --muted:#787884;
+    --accent:#c9b6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    min-height:100dvh;
+    background:
+      radial-gradient(120% 60% at 50% -12%, rgba(150,120,255,.11), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    line-height:1.75;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    display:flex;align-items:center;justify-content:center;
+    padding:clamp(28px,7vh,60px) 18px;
+  }
+  .wrap{width:100%;max-width:500px;text-align:center}
+
+  /* 坏掉的表盘 */
+  .dial{
+    position:relative;width:132px;height:132px;margin:0 auto 6px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.1);
+    background:
+      radial-gradient(circle at 50% 50%, rgba(201,182,255,.07), transparent 68%);
+    box-shadow:inset 0 0 32px rgba(0,0,0,.5);
+  }
+  .dial::after{
+    content:"";position:absolute;inset:11px;border-radius:50%;
+    border:1px dashed rgba(255,255,255,.07);
+  }
+  .dial .tk{
+    position:absolute;left:50%;top:7px;width:1px;height:6px;
+    background:rgba(255,255,255,.22);transform-origin:50% 59px;
+    transform:translateX(-.5px);
+  }
+  .dial .tk.big{height:9px;background:rgba(255,255,255,.4)}
+  .dial .hh,.dial .mm{
+    position:absolute;left:50%;bottom:50%;transform-origin:50% 100%;
+    border-radius:2px;transform:translateX(-50%);
+  }
+  .dial .hh{width:2.5px;height:33px;background:rgba(255,255,255,.5);
+    animation:spin 60s linear infinite, jitter 7s steps(1) infinite}
+  .dial .mm{width:1.5px;height:46px;background:rgba(201,182,255,.7);
+    animation:spin 6s linear infinite, jitter 3.5s steps(1) infinite}
+  .dial .pin{
+    position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;
+    background:#fff;transform:translate(-50%,-50%);
+    box-shadow:0 0 8px rgba(201,182,255,.7);
+  }
+  @keyframes spin{to{transform:translateX(-50%) rotate(360deg)}}
+  /* 卡顿 —— 表针会突然停一下再狂暴 */
+  @keyframes jitter{
+    0%,100%{animation-timing-function:linear}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .dial .hh,.dial .mm{animation:none;transform:translateX(-50%) rotate(40deg)}
+  }
+
+  .code{
+    margin-top:24px;font-size:11px;letter-spacing:.32em;text-indent:.32em;
+    color:rgba(120,120,132,.7);font-variant-numeric:tabular-nums;
+  }
+  h1{
+    margin-top:13px;
+    font-size:clamp(20px,5.8vw,26px);font-weight:600;letter-spacing:.03em;
+    background:linear-gradient(180deg,#fff,#a9a3c8);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .say{
+    margin-top:11px;font-size:13.5px;color:var(--dim);min-height:1.7em;
+  }
+  .req{
+    margin-top:8px;font-size:11px;color:rgba(120,120,132,.62);
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    word-break:break-all;overflow-wrap:anywhere;
+  }
+
+  /* 输入日期 → 跳转 */
+  .picker{
+    margin-top:30px;padding:16px;border:1px solid var(--line);border-radius:14px;
+    background:var(--card);
+  }
+  .picker .lb{
+    font-size:10.5px;color:var(--muted);letter-spacing:.14em;margin-bottom:11px;
+  }
+  .row{display:flex;gap:8px}
+  .row input{
+    flex:1;min-width:0;padding:10px 12px;border-radius:10px;
+    border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.28);
+    color:var(--ink);font-family:inherit;font-size:13.5px;
+    font-variant-numeric:tabular-nums;outline:none;
+    transition:border-color .2s;
+  }
+  .row input:focus{border-color:rgba(201,182,255,.5)}
+  .row input::-webkit-calendar-picker-indicator{filter:invert(.6)}
+  .row button{
+    flex:none;padding:10px 16px;border-radius:10px;cursor:pointer;
+    border:1px solid rgba(201,182,255,.35);background:rgba(201,182,255,.09);
+    color:#ddd4ff;font-family:inherit;font-size:13px;letter-spacing:.05em;
+    transition:all .22s;
+  }
+  .row button:hover{background:rgba(201,182,255,.18);border-color:rgba(201,182,255,.6)}
+  .hint{
+    margin-top:10px;font-size:11px;color:rgba(120,120,132,.75);min-height:1.5em;
+  }
+  .hint.bad{color:rgba(255,123,130,.85)}
+
+  /* 跳去哪 */
+  .menu{margin-top:22px;display:grid;gap:8px}
+  .item{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 15px;border-radius:12px;text-align:left;
+    border:1px solid var(--line);background:rgba(255,255,255,.022);
+    color:var(--dim);text-decoration:none;font-size:13px;
+    transition:all .22s cubic-bezier(.2,.7,.3,1);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .item:hover,.item:focus-visible{
+    border-color:rgba(201,182,255,.42);
+    background:rgba(201,182,255,.045);
+    color:var(--ink);transform:translateX(3px);outline:none;
+  }
+  .item .ic{flex:none;width:22px;text-align:center;font-size:14px;opacity:.85}
+  .item .tx{flex:1;min-width:0}
+  .item .tx b{display:block;font-weight:500}
+  .item .tx small{display:block;font-size:10.5px;color:var(--muted);margin-top:1px}
+  .item .ar{flex:none;color:rgba(255,255,255,.2);font-size:12px;transition:all .22s}
+  .item:hover .ar{color:var(--accent);transform:translateX(2px)}
+
+  .foot{
+    margin-top:34px;font-size:11px;color:rgba(120,120,132,.55);
+    letter-spacing:.1em;line-height:2;
+  }
+  .foot a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.13)}
+  .foot a:hover{border-bottom-color:var(--accent)}
+
+  .fade{opacity:0;transform:translateY(11px);animation:in .68s cubic-bezier(.2,.7,.3,1) forwards}
+  .d1{animation-delay:.06s}.d2{animation-delay:.14s}.d3{animation-delay:.23s}
+  .d4{animation-delay:.33s}.d5{animation-delay:.44s}
+  @keyframes in{to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.fade{opacity:1;transform:none;animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="dial fade" id="dial"><div class="pin"></div></div>
+
+  <div class="code fade d1">NO SUCH DAY</div>
+  <h1 class="fade d1">这一天不存在</h1>
+  <div class="say fade d2" id="say">时间机器卡住了。</div>
+  <div class="req fade d2" id="req"></div>
+
+  <div class="picker fade d3">
+    <div class="lb">或者，你自己挑一天</div>
+    <div class="row">
+      <input type="date" id="date" min="2025-10-15" max="2026-03-10">
+      <button id="go">去看看</button>
+    </div>
+    <div class="hint" id="hint">只有 2025.10.15 — 2026.03.10 这 100 天有记录</div>
+  </div>
+
+  <nav class="menu fade d4">
+    <a class="item" href="/">
+      <span class="ic">⏳</span>
+      <span class="tx"><b>回时间机器</b><small>拖一下，回到某一天</small></span>
+      <span class="ar">→</span>
+    </a>
+    <a class="item" href="https://xahuai.icu">
+      <span class="ic">🏠</span>
+      <span class="tx"><b>主站</b><small>xahuai.icu</small></span>
+      <span class="ar">→</span>
+    </a>
+    <a class="item" href="https://grow.xahuai.icu">
+      <span class="ic">🌱</span>
+      <span class="tx"><b>成长档案</b><small>她是怎样一点点长出来的</small></span>
+      <span class="ar">→</span>
+    </a>
+    <a class="item" href="https://voice.xahuai.icu">
+      <span class="ic">🔊</span>
+      <span class="tx"><b>声音博物馆</b><small>48 条原声</small></span>
+      <span class="ar">→</span>
+    </a>
+  </nav>
+
+  <div class="foot fade d5">
+    时间机器 · 小羊 2026<br>
+    <span style="opacity:.6">有些日子没有记录，就像有些日子没说话</span>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // 表盘刻度
+  var d = document.getElementById('dial');
+  var h = '';
+  for (var i = 0; i < 12; i++){
+    var big = (i % 3 === 0) ? ' big' : '';
+    h += '<i class="tk' + big + '" style="transform:translateX(-.5px) rotate(' + (i*30) + 'deg)"></i>';
+  }
+  h += '<div class="hh"></div><div class="mm"></div>';
+  d.insertAdjacentHTML('beforeend', h);
+
+  // 随机开场
+  var SAYS = [
+    '时间机器卡住了。',
+    '这一天没有被记录下来。',
+    '我翻遍了所有日子，没有这个。',
+    '这台机器只能回到有人说话的那天。',
+    '有些日子是空白的，这不是 bug。'
+  ];
+  document.getElementById('say').textContent = SAYS[Math.floor(Math.random()*SAYS.length)];
+
+  // 显示请求路径
+  var p = location.pathname + location.search;
+  if (p.length > 58) p = p.slice(0, 55) + '...';
+  document.getElementById('req').textContent = p;
+
+  // 日期跳转
+  var MIN = '2025-10-15', MAX = '2026-03-10';
+  var inp = document.getElementById('date');
+  var hint = document.getElementById('hint');
+
+  inp.addEventListener('input', function(){
+    var v = inp.value;
+    if (!v) return;
+    if (v < MIN || v > MAX){
+      hint.textContent = '这天没有记录（' + MIN.replace(/-/g,'.') + ' — ' + MAX.replace(/-/g,'.') + '）';
+      hint.className = 'hint bad';
+    } else {
+      hint.textContent = '去看看这天';
+      hint.className = 'hint';
+    }
+  });
+
+  document.getElementById('go').addEventListener('click', function(){
+    var v = inp.value;
+    if (!v){ hint.textContent = '先挑一天'; hint.className = 'hint bad'; return; }
+    if (v < MIN || v > MAX){
+      hint.textContent = '这天真的没有记录';
+      hint.className = 'hint bad';
+      return;
+    }
+    location.href = '/?d=' + v;
+  });
+
+  // 回车
+  inp.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') document.getElementById('go').click();
+  });
+})();
+</script>
+</body>
+</html>
